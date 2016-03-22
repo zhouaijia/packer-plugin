@@ -1,0 +1,163 @@
+apply plugin: 'com.jfrog.bintray'
+apply plugin: 'maven-publish'
+
+def projectName = "Packer-plugin"
+def mavenDesc = 'An apk packer plugin'
+def baseUrl = 'https://github.com/zhouaijia'
+def siteUrl = baseUrl
+def gitUrl = "${baseUrl}/packer-plugin.git"
+def issueUrl = "${baseUrl}/packer-plugin/issues"
+def licenseId = ['Apache-2.0']
+def licenseName = ['The Apache Software License,Version 2.0']
+def licenseUrl = ['http://www.apache.org/licenses/LICENSE-2.0.txt']
+def inception = '2016'
+def username = 'zhouaijia'
+
+if (project.getPlugins().hasPlugin('com.android.application')
+		|| project.getPlugins().hasPlugin('com.android.library')) {
+	task install(type: Upload, dependsOn: assemble) {
+		repositories.mavenInstaller {
+
+			pom.project {
+				name POM_NAME
+				description POM_DESCRIPTION
+				url POM_URL
+
+				groupId GROUP
+				artifactId POM_ARTIFACT_ID
+				version VERSION_NAME
+				inceptionYear POM_INCEPTION
+
+				scm {
+					url POM_SCM_URL
+					connection POM_SCM_CONNECTION
+					developerConnection POM_SCM_DEV_CONNECTION
+				}
+
+				developers {
+					developer {
+						id POM_DEVELOPER_ID
+						name POM_DEVELOPER_NAME
+					}
+				}
+
+				licenses {
+					license {
+						name POM_LICENSE_NAME
+						url POM_LICENSE_URL
+						distribution POM_LICENSE_DIST
+					}
+					/*licenseNames.eachWithIndex { ln, li ->
+                        license {
+                            name ln
+                            url licenseUrl
+                        }
+                    }*/
+				}
+			}
+		}
+	}
+
+	task androidJavadocs(type: Javadoc) {
+		failOnError false
+		source = android.sourceSets.main.java.source
+		classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+	}
+
+	task androidJavadocsJar(type: Jar, dependsOn: androidJavadocs) {
+		classifier = 'javadoc'
+		from androidJavadocs.destinationDir
+	}
+
+	task androidSourcesJar(type: Jar) {
+		classifier = 'sources'
+		from android.sourceSets.main.java.source
+	}
+} else {
+	install {
+		repositories {
+			mavenInstaller {
+				//pom.groupId = GROUP
+				//pom.artifactId = POM_ARTIFACT_ID
+				//pom.version = VERSION_NAME
+
+				pom.project {
+					name POM_NAME
+					description POM_DESCRIPTION
+					url POM_URL
+
+					groupId GROUP
+					artifactId POM_ARTIFACT_ID
+					version VERSION_NAME
+					inceptionYear POM_INCEPTION
+
+					scm {
+						url POM_SCM_URL
+						connection POM_SCM_CONNECTION
+						developerConnection POM_SCM_DEV_CONNECTION
+					}
+
+					developers {
+						developer {
+							id POM_DEVELOPER_ID
+							name POM_DEVELOPER_NAME
+						}
+					}
+
+					licenses {
+						license {
+							name POM_LICENSE_NAME
+							url POM_LICENSE_URL
+							distribution POM_LICENSE_DIST
+						}
+						/*licenseNames.eachWithIndex { ln, li ->
+                            license {
+                                name ln
+                                url licenseUrl
+                            }
+                        }*/
+					}
+				}
+			}
+		}
+	}
+
+	task sourcesJar(type: Jar, dependsOn:classes) {
+		classifier = 'sources'
+		from sourceSets.main.allSource
+	}
+
+	task javadocJar(type: Jar, dependsOn:javadoc) {
+		classifier = 'javadoc'
+		from javadoc.destinationDir
+	}
+}
+
+artifacts {
+	if (project.getPlugins().hasPlugin('com.android.application')
+			|| project.getPlugins().hasPlugin('com.android.library')) {
+		archives androidSourcesJar
+		archives androidJavadocsJar
+	} else {
+		archives sourcesJar
+		archives javadocJar
+	}
+}
+
+bintray {
+	user = BINTRAY_USER
+	key = BINTRAY_KEY
+	configurations = ['archives']
+	pkg {
+		repo = 'maven'
+		name = POM_NAME
+		desc = mavenDesc
+		websiteUrl = POM_URL
+		issueTrackerUrl = issueUrl
+		vcsUrl = gitUrl
+		labels = ['gradle','plugin','packer']
+		licenses = licenseId
+		publish = true
+		publicDownloadNumbers = true
+	}
+}

@@ -1,0 +1,71 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion "23.0.2"
+
+    defaultConfig {
+        applicationId "com.aijia.packer"
+        minSdkVersion 9
+        targetSdkVersion 23
+        versionCode 1
+        versionName "1.0"
+    }
+
+    signingConfigs {
+        release {
+            storeFile file("android.keystore")
+            storePassword "android"
+            keyAlias "android"
+            keyPassword "android"
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        /*beta {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+            debuggable true
+        }*/
+    }
+
+    productFlavors {
+
+    }
+
+    lintOptions {
+        abortOnError false
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile 'com.android.support:appcompat-v7:23.2.0'
+    compile 'com.android.support:design:23.2.0'
+}
+
+
+buildscript {
+    repositories {
+        maven {
+            url uri('../repo')
+        }
+    }
+
+    dependencies {
+        classpath 'com.aijia.packer:packerplugin:1.0.3'
+    }
+}
+
+apply plugin: 'packer'
+
+packer {
+    archiveOutput = file(new File(project.rootProject.buildDir.path, "myapks"))
+    manifestMatcher = ['UMENG_CHANNEL','XXSY_CHANNEL_ID']
+    apkPrefixName = 'xxsy_'
+}

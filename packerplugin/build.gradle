@@ -1,0 +1,24 @@
+apply plugin: 'groovy'
+apply plugin: 'maven'
+
+group='com.aijia.packer'
+version='1.0.3'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile gradleApi()
+    compile localGroovy()
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: uri ('../repo'))
+        }
+    }
+}
+
+apply from: '../bintray.gradle'

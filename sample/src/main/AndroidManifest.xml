@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          package="com.aijia.packer">
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+        <activity
+            android:name=".MainActivity"
+            android:label="@string/app_name"
+            android:theme="@style/AppTheme.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+
+
+
+        <!--
+     用户注册渠道号 xxsy:50,baidu:57,yingyongbao:56,360:51,wandoujia:54,
+     anzhuoshichang:52,xiaomi:60,huawei:59,sanxing:70,yingyonghui:53
+     meizu:138,lianxiang:62,jifeng:63,mumayi:64,anzhi:55,91shichang:176
+     oppo:58,xinlang:180,baidu-91:181
+       -->
+        <meta-data
+            android:name="UMENG_CHANNEL"
+            android:value="ppzhushou" />
+        <meta-data
+            android:name="XXSY_CHANNEL_ID"
+            android:value="1120" />
+    </application>
+
+</manifest>
