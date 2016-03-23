@@ -25,7 +25,8 @@ packer {
     targetOutputDir = file(new File(project.rootProject.buildDir.path, "myApk"))
     //指定manifest中要替换的字符串，不是以"_ID"结尾的字符串都会被替换成渠道名，否则会被替换成渠道Id
     manifestMatcher = ['UMENG_CHANNEL','XXSY_CHANNEL_ID']
-    //指定输出的apk的名称前缀。例：如果前缀是xxsy_，且有baidu这个渠道号，则有xxsy_baidu.apk
+    //指定输出的apk的名称前缀。例：如果前缀是xxsy_，后缀是_xxsy,且有baidu这个渠道号，则有xxsy_baidu_xxsy.apk
+    //不配置前后缀，则为baidu.apk
     apkPrefixName = 'xxsy_'
     apkSuffixName = '_xxsy'
 }
