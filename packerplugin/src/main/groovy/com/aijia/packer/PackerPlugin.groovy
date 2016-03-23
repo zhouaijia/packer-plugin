@@ -23,7 +23,6 @@ public class PackerPlugin implements Plugin<Project> {
         if(!hasAndroidPlugin(project)) {
             throw new ProjectConfigurationException("the android plugin must be applied",null)
         }
-
         this.project = project
         //监听每个任务的执行耗时
         project.gradle.addListener(new TimeListener())

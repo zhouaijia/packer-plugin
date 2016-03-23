@@ -2,7 +2,6 @@
 .DS_Store
 .gradle/
 .idea/
-app/
 build/
 repo/
 local.properties
