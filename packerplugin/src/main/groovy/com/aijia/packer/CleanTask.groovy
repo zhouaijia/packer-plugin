@@ -5,11 +5,11 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
 
 
-class CleanTasks extends DefaultTask {
+class CleanTask extends DefaultTask {
     @Input
     File target
 
-    CleanTasks() {
+    CleanTask() {
         setDescription('clean all apk archives in output dir')
     }
 
