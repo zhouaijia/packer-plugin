@@ -4,17 +4,23 @@ A gradle plugin for apk packer.
 使用方法
 
 在相应module下的 build.gradle文件中添加对本插件的依赖 ：
+
 buildscript {
+
     repositories {
         mavenCentral()
     }
+
 
     dependencies{
         classpath 'com.aijia.packer:packerplugin:1.0.6'
     }
 }
+
 apply plugin: 'packer'
+
 packer {
+
     //指定apk输出路径
     targetOutputDir = file(new File(project.rootProject.buildDir.path, "myApk"))
     //指定manifest中要替换的字符串，不是以"_ID"结尾的字符串都会被替换成渠道名，否则会被替换成渠道Id
@@ -28,6 +34,8 @@ packer {
 多渠道打包
 
 在相应的project根目录下创建一个纯文本文件，内容是渠道名列表。每行一个渠道号，渠道名与渠道Id之间以"-"分割，#后面为注释。列表解析的时候会自动忽略空白行，但是格式不规范会报错。示例：
+
+
 baidu-200#百度
 xiaomi-300#小米
 wandoujia-400#豌豆荚
