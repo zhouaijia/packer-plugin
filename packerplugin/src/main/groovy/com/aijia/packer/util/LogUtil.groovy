@@ -1,4 +1,4 @@
-package com.aijia.packer
+package com.aijia.packer.util
 
 import org.gradle.api.Project
 

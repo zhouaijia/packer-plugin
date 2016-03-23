@@ -1,4 +1,4 @@
-package com.aijia.packer
+package com.aijia.packer.listener
 
 import org.gradle.BuildResult
 import org.gradle.api.Task
@@ -9,7 +9,10 @@ import org.gradle.api.invocation.Gradle
 import org.gradle.api.tasks.TaskState
 import org.gradle.util.Clock
 
-public class TimeListener implements TaskExecutionListener, BuildListener{
+/**
+ * Analyse every task spends time
+ * */
+public class TaskSpendTimeListener implements TaskExecutionListener, BuildListener{
     private Clock clock
     private times = []
 

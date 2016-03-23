@@ -1,5 +1,11 @@
 package com.aijia.packer
 
+import com.aijia.packer.extension.PackerExtension
+import com.aijia.packer.listener.TaskSpendTimeListener
+import com.aijia.packer.tasks.CopyApk2BuildOutput
+import com.aijia.packer.tasks.CopyApk2TargetDir
+import com.aijia.packer.tasks.ModifyManifest
+import com.aijia.packer.util.LogUtil
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.ProjectConfigurationException
@@ -12,21 +18,23 @@ import org.gradle.api.tasks.StopExecutionException
  * 代码中可能有些task的顺序与gradle系统里面的执行顺序不一样，但是执行插件时顺序却是正确的，
  * 这是因为不少task的执行顺序已经在gradle系统里面被关联好了
  * */
-public class PackerPlugin implements Plugin<Project> {
-    static final String EXTENSION_NAME = "packer"
+public class MainPlugin implements Plugin<Project> {
     static final String CHANNEL = "channel"
+    static final String EXTENSION_NAME = "packer"
+    /**开始编译打包的命令的前缀*/
+    static final String BUILD_TASK_NAME_PREFIX = "buildApk"
 
     private Project project
-    private PackerPluginParams packerPluginParams
+    private PackerExtension packerExtension
 
     void apply(Project project) {
         if(!hasAndroidPlugin(project)) {
-            throw new ProjectConfigurationException("the android plugin must be applied",null)
+            throw new ProjectConfigurationException("android plugin must be applied",null)
         }
 
         this.project = project
         //监听每个任务的执行耗时
-        project.gradle.addListener(new TimeListener())
+        project.gradle.addListener(new TaskSpendTimeListener())
 
         applyExtension()
         def hasChannels = applyChannels()
@@ -36,7 +44,7 @@ public class PackerPlugin implements Plugin<Project> {
     /**应用扩展属性*/
     void applyExtension() {
         project.configurations.create(EXTENSION_NAME).extendsFrom(project.configurations.compile)
-        this.packerPluginParams = project.extensions.create(EXTENSION_NAME,PackerPluginParams,project)
+        this.packerExtension = project.extensions.create(EXTENSION_NAME,PackerExtension,project)
     }
 
     /**应用本组件。参数类型可变*/
@@ -48,16 +56,20 @@ public class PackerPlugin implements Plugin<Project> {
             LogUtil.d(project,"applyPluginTasks-->build types: ${buildTypes.collect{ it.name }}")
             checkProperties()
             //applySigningConfigs()
+
+            //如果在此处对productFlavors进行初始化，会发现applicationVariants中没有数据，
+            // 因为productFlavors只有在完成afterEvaluate之前进行初始化才有效
+
             project.android.applicationVariants.all{ variant ->
                 println '-------------checkSigningConfig----------'
                 checkSigningConfig(variant)
                 if(variant.buildType.name != "debug") {
                     if(hasChannels) {
-                        LogUtil.d(project,"applyPluginTasks-->markets found,add manifest and archive task.")
-                        checkArchiveTask(variant)
+                        LogUtil.d(project,"applyPluginTasks-->channels found,add manifest and assemble task.")
+                        checkAssembleTask(variant)
                         checkManifest(variant)
                     } else {
-                        LogUtil.d(project,"applyPluginTask-->markets not found,check version name.")
+                        LogUtil.d(project,"applyPluginTask-->channels not found,check version name.")
                     }
                 }
             }
@@ -65,7 +77,7 @@ public class PackerPlugin implements Plugin<Project> {
     }
 
     void checkProperties() {
-        LogUtil.d(project,"checkProperties-->manifest:" + packerPluginParams.manifestMatcher)
+        LogUtil.d(project,"checkProperties-->manifest:" + packerExtension.manifestMatcher)
     }
 
     /**检查各个版本（release、bug等）的签名配置*/
@@ -83,50 +95,50 @@ public class PackerPlugin implements Plugin<Project> {
     void checkManifest(variant) {
         //如果没有productFlavors，则返回
         if(!variant.productFlavors) {
-            LogUtil.w(project,"checkManifest-->${variant.name}: check manifest, no flavors found, ignore.")
+            LogUtil.w(project,"checkManifest-->${variant.name}: check manifest, no flavors found,.")
             return
         }
         if(!variant.outputs) {
-            LogUtil.w(project,"checkManifest-->${variant.name}: check manifest,no outputs found, ignore.")
+            LogUtil.w(project,"checkManifest-->${variant.name}: check manifest,no outputs found.")
             return
         }
-        if(!packerPluginParams.manifestMatcher) {
+        if(!packerExtension.manifestMatcher) {
             LogUtil.e(project,"checkManifest-->${variant.name}: check manifest, no manifest matcher found, quit.")
             return
         }
         def Task processManifestTask = variant.outputs[0].processManifest
         def Task processResourcesTask = variant.outputs[0].processResources
         def processMetaTask = project.task("modify${variant.name.capitalize()}MetaData",
-                type: ModifyManifestTask) {
+                type: ModifyManifest) {
             manifestFile = processManifestTask.manifestOutputFile
-            manifestMatcher = packerPluginParams.manifestMatcher
+            manifestMatcher = packerExtension.manifestMatcher
             flavorName = variant.productFlavors[0].name
             dependsOn processManifestTask
         }
         processResourcesTask.dependsOn processMetaTask
     }
 
-    void checkArchiveTask(variant) {
+    void checkAssembleTask(variant) {
         if(variant.buildType.signingConfig == null) {
-            LogUtil.w(project,"checkArchiveTask-->${variant.name}: signingConfig is null, ignore archive task.")
+            LogUtil.w(project,"checkAssembleTask-->${variant.name}: signingConfig is null, ignore assemble task.")
             return
         }
         if(!variant.buildType.zipAlignEnabled) {
-            LogUtil.w(project, "checkArchiveTask-->${variant.name}: zipAlignEnabled = false, ignore archive task.")
+            LogUtil.w(project, "checkAssembleTask-->${variant.name}: zipAlignEnabled = false, ignore assemble task.")
             return
         }
 
-        println "checkArchiveTask11111111-->for ${variant.name}"
-        LogUtil.d(project,"checkArchiveTask-->for ${variant.name}")
+        println "checkAssembleTask11111111-->for ${variant.name}"
+        LogUtil.d(project,"checkAssembleTask-->for ${variant.name}")
 
         def String apkName = createApkName(variant)
         def File inputFile = variant.outputs[0].outputFile
-        def File outputDir = packerPluginParams.archiveOutput
-        LogUtil.d(project,"checkArchiveTask-->intput file: ${inputFile}")
-        LogUtil.d(project,"checkArchiveTask-->output dir: ${outputDir}")
+        def File outputDir = packerExtension.targetOutputDir
+        LogUtil.d(project,"checkAssembleTask-->intput file: ${inputFile}")
+        LogUtil.d(project,"checkAssembleTask-->output dir: ${outputDir}")
         //这里会生成所有渠道的打包任务，并将这些打包任务加入到任务有向图中
-        def archiveTask = project.task("archiveApk${variant.name.capitalize()}",
-              type: ArchiveApkVariantTask) {
+        def assembleTask = project.task("${BUILD_TASK_NAME_PREFIX}${variant.name.capitalize()}",
+              type: CopyApk2TargetDir) {
             variantName = variant.name
             from inputFile.absolutePath
             into outputDir.absolutePath
@@ -136,32 +148,32 @@ public class PackerPlugin implements Plugin<Project> {
             dependsOn variant.assemble
         }
 
-        LogUtil.d(project,"checkArchiveTask-->new task:${archiveTask.name}")
+        LogUtil.d(project,"checkAssembleTask-->new task:${assembleTask.name}")
         def buildTypeName = variant.buildType.name
-        println "checkArchiveTask222222222-->${buildTypeName}---${variant.name}"
+        println "checkAssembleTask222222222-->${buildTypeName}---${variant.name}"
         //若非多渠道打包，则默认只有release一个版本，
         // 此时"release" == variant.name == variant.buildType.name。
         // 否则会出现诸如xiaomiRelease等版本，
         // 此时(variant.name == "xiaomiRelease") ！= (variant.buildType.name == "release")
         if(variant.name != buildTypeName) {
-            def Task task = checkArchiveAllTask(buildTypeName)
+            def Task task = checkAssembleAllTask(buildTypeName)
             //此task将排在各个渠道task的后面
-            task.dependsOn archiveTask
+            task.dependsOn assembleTask
         }
     }
 
     /**
      * archiveApkRelease 本插件的命令入口
-     * 此task依赖各个渠道的编译打包task，所以先执行各个渠道的task
+     * 此task依赖各个渠道的编译打包task，以先执行各个渠道的task
      * */
-    Task checkArchiveAllTask(buildTypeName) {
-        def taskName = "archiveApk${buildTypeName.capitalize()}"
-        def task = project.tasks.findByName(taskName)
-        LogUtil.d(project,"checkArchiveAllTask-->taskName-->"+taskName)
+    Task checkAssembleAllTask(buildTypeName) {
+        def buildTaskName = "${BUILD_TASK_NAME_PREFIX}${buildTypeName.capitalize()}"
+        def task = project.tasks.findByName(buildTaskName)
+        LogUtil.d(project,"checkAssembleAllTask-->taskName-->"+buildTaskName)
         //这里可以保证此任务在当前执行中是唯一的
         if(task == null) {
-            LogUtil.d(project,"checkArchiveAllTask-->task is null")
-            task = project.task(taskName, type: ArchiveApkBuildTypeTask) {
+            LogUtil.d(project,"checkAssembleAllTask-->task is null")
+            task = project.task(buildTaskName, type: CopyApk2BuildOutput) {
                 typeName = buildTypeName
             }
         }
@@ -169,10 +181,10 @@ public class PackerPlugin implements Plugin<Project> {
     }
 
     String createApkName(variant) {
-        def String apkName = "${packerPluginParams.apkPrefixName}${variant.flavorName}.apk"
+        def String apkName = "${packerExtension.apkPrefixName}${variant.flavorName}.apk"
         def temp = variant.flavorName.split('-')
         if(temp && temp[0] && temp[0].trim()) {
-            apkName = "${packerPluginParams.apkPrefixName}${temp[0].trim()}.apk"
+            apkName = "${packerExtension.apkPrefixName}${temp[0].trim()}.apk"
         }
 
         return apkName
@@ -180,34 +192,39 @@ public class PackerPlugin implements Plugin<Project> {
 
     /**解析channels文件
      * 文件由命令行
-     *      gradlew -Pchannel=app/channels.txt clean archiveApkRelease
+     *      gradlew -Pchannel=app/channels.txt clean buildApkRelease
      * 得到
      * */
     boolean applyChannels() {
+        /*此处一直返回false，因为在没有完成evaluate时，扩展的参数是无法获取到的
+        if(!packerExtension.channelFilePath) {
+            LogUtil.d(project,"applyChannels-->channels property not found")
+            return false
+        }*/
         if(!project.hasProperty(CHANNEL)) {
-            LogUtil.d(project,"applyChannels-->channels property not found,ignore")
+            LogUtil.d(project,"applyChannels-->channels property not found")
             return  false;
         }
 
         def channelFilePath = project.property(CHANNEL).toString()
         if(!channelFilePath) {
-            LogUtil.d(project,"applyChannels-->invalid channel file path,ignore")
+            LogUtil.d(project,"applyChannels-->invalid channel file path")
             throw new StopExecutionException("invalid channel file path: '${channelFilePath}'")
         }
 
-        File channel = project./*rootProject.*/file(channelFilePath)
+        File channel = project.file(channelFilePath)
         if(!channel.exists()) {
-            LogUtil.d(project,"applyChannel-->channel file not found, ignore")
+            LogUtil.d(project,"applyChannel-->channel file not found")
             throw new StopExecutionException("channel file not found: '${channel.absolutePath}'")
         }
 
         if(!channel.isFile()) {
-            LogUtil.d(project,"applyChannel-->channel is not a file,ignore")
+            LogUtil.d(project,"applyChannel-->channel is not a file")
             throw new StopExecutionException("channel is not a file: '${channel.absolutePath}'")
         }
 
         if(!channel.canRead()) {
-            LogUtil.d(project,"applyChannel-->channel is not readable,ignore")
+            LogUtil.d(project,"applyChannel-->channel is not readable")
             throw new StopExecutionException("channel is not readable: '${channel.absolutePath}'")
         }
 
@@ -223,6 +240,7 @@ public class PackerPlugin implements Plugin<Project> {
                 def c = parts[0].trim()
                 if(c && !flavors.contains(c)) {
                     LogUtil.d(project,"apply new channel: " + c)
+                    //必须在afterEvaluate之前将各个渠道号加入到productFlavors中
                     project.android.productFlavors.create(c, {})
                 }
             } else {

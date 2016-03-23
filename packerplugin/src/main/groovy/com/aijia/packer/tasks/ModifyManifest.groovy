@@ -1,14 +1,14 @@
-package com.aijia.packer
+package com.aijia.packer.tasks
 
+import com.aijia.packer.util.LogUtil
 import groovy.xml.StreamingMarkupBuilder
 import groovy.xml.XmlUtil
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.StopExecutionException
 import org.gradle.api.tasks.TaskAction
 
 
-class ModifyManifestTask extends DefaultTask{
+class ModifyManifest extends DefaultTask{
     @Input
     def File manifestFile
 
@@ -18,13 +18,13 @@ class ModifyManifestTask extends DefaultTask{
     @Input
     def flavorName
 
-    ModifyManifestTask() {
+    ModifyManifest() {
         setDescription('modify manifest meta-data value to channel name')
     }
 
     @TaskAction
     void showMessage() {
-        LogUtil.i(project,"ModifyManifestTask-->${name}-->showMessage-->${description}")
+        LogUtil.i(project,"ModifyManifest-->${name}-->showMessage-->${description}")
     }
 
     @TaskAction
@@ -44,10 +44,10 @@ class ModifyManifestTask extends DefaultTask{
     }
 
     void modifyManifest(def channelName, def channelId){
-        LogUtil.i(project,"${name}-->modifyManifest-->manifestFile:${manifestFile.absolutePath}")
+        LogUtil.i(project,"ModifyManifest-->${name}-->modifyManifest-->manifestFile:${manifestFile.absolutePath}")
         def root = new XmlSlurper().parse(manifestFile)
                 .declareNamespace(android: "http://schemas.android.com/apk/res/android")
-        LogUtil.i(project,"${name}-->modifyManifest-->matcher:${manifestMatcher}")
+        LogUtil.i(project,"ModifyManifest-->${name}-->modifyManifest-->matcher:${manifestMatcher}")
 
         manifestMatcher?.each { String pattern ->
             if(pattern && "UMENG_CHANNEL".equals(pattern)){
