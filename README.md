@@ -37,20 +37,27 @@ packer {
 
 
 baidu-200#百度
+
 xiaomi-300#小米
+
 wandoujia-400#豌豆荚
+
 huawei-500#华为
 
 
 批量打包命令
 
 示例（在project根目录执行）：
+
 gradlew -Pchannel=channels.txt clean buildApkRelease
+
 如果文件在module目录下，比如sample，则应为
+
 gradlew -Pchannel=sample/channels.txt clean buildApkRelease
 
 
 问题
 
 如果报 Task 'buildApkRelease' not found in root project ，则原因可能有：
+
 1.没有在相应的module下的build.gradle里面添加对本插件的依赖
