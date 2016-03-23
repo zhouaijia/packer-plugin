@@ -50,10 +50,10 @@ class ModifyManifest extends DefaultTask{
         LogUtil.i(project,"ModifyManifest-->${name}-->modifyManifest-->matcher:${manifestMatcher}")
 
         manifestMatcher?.each { String pattern ->
-            if(pattern && "UMENG_CHANNEL".equals(pattern)){
-                setChannelName(root,channelName,pattern)
-            } else if(pattern && "XXSY_CHANNEL_ID".equals(pattern)){
+            if(pattern && pattern.endsWith("_ID")){
                 setChannelId(root,channelId,pattern)
+            } else {
+                setChannelName(root,channelName,pattern)
             }
         }
         serializeXml(root,manifestFile)

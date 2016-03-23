@@ -58,7 +58,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.aijia.packer:packerplugin:1.0.4'
+        classpath 'com.aijia.packer:packerplugin:1.0.6'
     }
 }
 
@@ -68,4 +68,5 @@ packer {
     targetOutputDir = file(new File(project.rootProject.buildDir.path, "myApk"))
     manifestMatcher = ['UMENG_CHANNEL','XXSY_CHANNEL_ID']
     apkPrefixName = 'xxsy_'
+    //apkSuffixName = '_xxsy'
 }

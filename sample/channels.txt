@@ -1,4 +1,2 @@
 baidu-200#百度，后面的数字是渠道Id
 xiaomi-300#小米
-wandoujia-400#豌豆荚
-huawei-500#华为

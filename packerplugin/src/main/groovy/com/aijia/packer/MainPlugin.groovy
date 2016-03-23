@@ -181,10 +181,10 @@ public class MainPlugin implements Plugin<Project> {
     }
 
     String createApkName(variant) {
-        def String apkName = "${packerExtension.apkPrefixName}${variant.flavorName}.apk"
+        def String apkName = "${packerExtension.apkPrefixName}${variant.flavorName}${packerExtension.apkSuffixName}.apk"
         def temp = variant.flavorName.split('-')
         if(temp && temp[0] && temp[0].trim()) {
-            apkName = "${packerExtension.apkPrefixName}${temp[0].trim()}.apk"
+            apkName = "${packerExtension.apkPrefixName}${temp[0].trim()}${packerExtension.apkSuffixName}.apk"
         }
 
         return apkName
