@@ -212,7 +212,7 @@ public class MainPlugin implements Plugin<Project> {
             throw new StopExecutionException("invalid channel file path: '${channelFilePath}'")
         }
 
-        File channel = project.file(channelFilePath)
+        File channel = project.rootProject.file(channelFilePath)
         if(!channel.exists()) {
             LogUtil.d(project,"applyChannel-->channel file not found")
             throw new StopExecutionException("channel file not found: '${channel.absolutePath}'")
