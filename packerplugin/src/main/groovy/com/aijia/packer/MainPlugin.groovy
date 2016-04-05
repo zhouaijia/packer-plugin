@@ -184,7 +184,11 @@ public class MainPlugin implements Plugin<Project> {
         def String apkName = "${packerExtension.apkPrefixName}${variant.flavorName}${packerExtension.apkSuffixName}.apk"
         def temp = variant.flavorName.split('-')
         if(temp && temp[0] && temp[0].trim()) {
-            apkName = "${packerExtension.apkPrefixName}${temp[0].trim()}${packerExtension.apkSuffixName}.apk"
+            if(!"xxsy".equals(temp[0].trim())) {
+                apkName = "${packerExtension.apkPrefixName}${temp[0].trim()}${packerExtension.apkSuffixName}.apk"
+            } else {
+                apkName = "xxsy.apk"
+            }
         }
 
         return apkName
@@ -233,20 +237,25 @@ public class MainPlugin implements Plugin<Project> {
         flavors.addAll(project.android.productFlavors.collect { it.name})
         LogUtil.d(project,"applyChannel-->default flavors:" + flavors)
 
-        channel.eachLine { line, number ->
+        channel.eachLine { String line, number ->
             LogUtil.d(project,"applyChannel-->${number}: '${line}'")
-            def parts = line.split('#')
-            if(parts && parts[0]) {
-                def c = parts[0].trim()
-                if(c && !flavors.contains(c)) {
-                    LogUtil.d(project,"apply new channel: " + c)
-                    //必须在afterEvaluate之前将各个渠道号加入到productFlavors中
-                    project.android.productFlavors.create(c, {})
+            if(line && !line.startsWith("*")) {
+                def parts = line.split('#')
+                if(parts && parts[0]) {
+                    def c = parts[0].trim()
+                    if(c && !flavors.contains(c)) {
+                        LogUtil.d(project,"apply new channel: " + c)
+                        //必须在afterEvaluate之前将各个渠道号加入到productFlavors中
+                        project.android.productFlavors.create(c, {})
+                    }
+                } else {
+                    LogUtil.w(project,"invalid line found in channel file-->${number}:'${line}'")
+                    //throw new IllegalArgumentException("invalid channel: ${line} at line:${number} in your channel file")
                 }
             } else {
                 LogUtil.w(project,"invalid line found in channel file-->${number}:'${line}'")
-                //throw new IllegalArgumentException("invalid channel: ${line} at line:${number} in your channel file")
             }
+
         }
 
         return true

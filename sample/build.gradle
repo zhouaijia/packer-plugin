@@ -58,7 +58,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.aijia.packer:packerplugin:1.0.6'
+        classpath 'com.aijia.packer:packerplugin:1.0.7'
     }
 }
 
