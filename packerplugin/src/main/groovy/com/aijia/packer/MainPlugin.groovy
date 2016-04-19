@@ -55,7 +55,7 @@ public class MainPlugin implements Plugin<Project> {
             def buildTypes = project.android.buildTypes
             LogUtil.d(project,"applyPluginTasks-->build types: ${buildTypes.collect{ it.name }}")
             checkProperties()
-            //applySigningConfigs()
+            setSigningConfigs()
 
             //如果在此处对productFlavors进行初始化，会发现applicationVariants中没有数据，
             // 因为productFlavors只有在完成afterEvaluate之前进行初始化才有效
@@ -117,6 +117,39 @@ public class MainPlugin implements Plugin<Project> {
         }
         processResourcesTask.dependsOn processMetaTask
     }
+
+    private final String KEY_STORE_FILE = "android.injected.signing.store.file"
+    private final String KEY_STORE_PASSWORD = "android.injected.signing.store.password"
+    private final String KEY_ALIAS = "android.injected.signing.key.alias"
+    private final String KEY_PASSWORD = "android.injected.signing.key.password"
+
+    void setSigningConfigs() {
+        def configs = project.android.signingConfigs
+        if (configs.findByName("release")) {
+            LogUtil.d(project,"setSigningConfigs-->release signingConfig found")
+            project.android.buildTypes.each {
+                if (it.name != "debug") {
+                    if (it.signingConfig == null) {
+                        LogUtil.d(project,"setSigningConfigs-->add signingConfig for type: ${it.name}")
+
+                        it.signingConfig = configs.release
+                        if(project.hasProperty(KEY_STORE_FILE)
+                                && project.hasProperty(KEY_STORE_PASSWORD)
+                                && project.hasProperty(KEY_ALIAS)
+                                && project.hasProperty(KEY_PASSWORD)) {
+                            it.signingConfig.storeFile = project.file(project.property(KEY_STORE_FILE).toString())
+                            it.signingConfig.storePassword = project.property(KEY_STORE_PASSWORD).toString()
+                            it.signingConfig.keyAlias = project.property(KEY_ALIAS).toString()
+                            it.signingConfig.keyPassword = project.property(KEY_PASSWORD).toString()
+                        }
+                    }
+                }
+            }
+        } else {
+            LogUtil.w(project,"applySigningConfigs-->signingConfig.release not found")
+        }
+    }
+
 
     void checkAssembleTask(variant) {
         if(variant.buildType.signingConfig == null) {
